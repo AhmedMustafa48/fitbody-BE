@@ -58,3 +58,20 @@ export const logout = (_req, res) => {
   res.clearCookie("token");
   res.json({ success: true, message: "Logged out" });
 };
+
+export const seed = async (req, res, next) => {
+  try {
+    const { ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+      return res.status(400).json({ error: "Set ADMIN_EMAIL and ADMIN_PASSWORD in .env" });
+    }
+    const existing = await Admin.findOne({ email: ADMIN_EMAIL });
+    if (existing) {
+      return res.json({ message: `Admin already exists: ${ADMIN_EMAIL}` });
+    }
+    await Admin.create({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+    res.json({ message: `Admin created successfully: ${ADMIN_EMAIL}` });
+  } catch (err) {
+    next(err);
+  }
+};
