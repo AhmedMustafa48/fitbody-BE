@@ -24,10 +24,11 @@ export const login = async (req, res, next) => {
       { expiresIn: "7d" }
     );
 
+    const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      secure: isProd,
+      sameSite: isProd ? "none" : "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
