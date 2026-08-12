@@ -4,7 +4,7 @@ const memberSchema = new mongoose.Schema(
   {
     memberId:          { type: String, required: true, unique: true, trim: true },
     fullName:          { type: String, required: true, trim: true },
-    phone:             { type: String, required: true, unique: true, trim: true },
+    phone:             { type: String, required: true, trim: true },
     cnic:              { type: String, unique: true, sparse: true, trim: true },
     gender:            { type: String, enum: ["male", "female", "other"], required: true },
     shift:             { type: String, enum: ["morning", "evening"], required: true },
