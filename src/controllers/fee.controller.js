@@ -17,7 +17,7 @@ export const getFeesOverview = async (req, res, next) => {
   try {
     await markOverdueFees();
 
-    const { status, search, page = 1, limit = 20 } = req.query;
+    const { status, search, gender, page = 1, limit = 20 } = req.query;
 
     const matchStage = { isActive: true };
     if (search) {
@@ -47,21 +47,28 @@ export const getFeesOverview = async (req, res, next) => {
           latestFee: { $arrayElemAt: ["$feeArr", 0] },
           feeStatus: {
             $cond: {
-              if: { $gt: [{ $size: "$feeArr" }, 0] },
-              then: {
+              if: { $eq: ["$feesAfterDiscount", 0] },
+              then: "free",
+              else: {
                 $cond: {
-                  if: {
-                    $and: [
-                      { $eq: [{ $arrayElemAt: ["$feeArr.status", 0] }, "paid"] },
-                      { $gt: [{ $arrayElemAt: ["$feeArr.remaining", 0] }, 0] }
-                    ]
+                  if: { $gt: [{ $size: "$feeArr" }, 0] },
+                  then: {
+                    $cond: {
+                      if: {
+                        $and: [
+                          { $eq: [{ $arrayElemAt: ["$feeArr.status", 0] }, "paid"] },
+                          { $gt: [{ $arrayElemAt: ["$feeArr.remaining", 0] }, 0] }
+                        ]
+                      },
+                      then: "partial",
+                      else: { $arrayElemAt: ["$feeArr.status", 0] }
+                    }
                   },
-                  then: "partial",
-                  else: { $arrayElemAt: ["$feeArr.status", 0] }
+                  else: "never_paid",
                 }
-              },
-              else: "never_paid",
-            },
+              }
+            }
+          },
           },
         },
       },
@@ -75,11 +82,22 @@ export const getFeesOverview = async (req, res, next) => {
       partial: allMembers.filter((m) => m.feeStatus === "partial").length,
       overdue: allMembers.filter((m) => m.feeStatus === "overdue").length,
       neverPaid: allMembers.filter((m) => m.feeStatus === "never_paid").length,
+      free: allMembers.filter((m) => m.feeStatus === "free").length,
+    };
+
+    const genderSummary = {
+      all: allMembers.length,
+      male: allMembers.filter((m) => m.gender === "male").length,
+      female: allMembers.filter((m) => m.gender === "female").length,
+      other: allMembers.filter((m) => m.gender === "other").length,
     };
 
     let filtered = allMembers;
+    if (gender && gender !== "all") {
+      filtered = filtered.filter((m) => m.gender === gender);
+    }
     if (status && status !== "all") {
-      filtered = allMembers.filter((m) => m.feeStatus === status);
+      filtered = filtered.filter((m) => m.feeStatus === status);
     }
 
     const total = filtered.length;
@@ -88,7 +106,7 @@ export const getFeesOverview = async (req, res, next) => {
       Number(page) * Number(limit)
     );
 
-    res.json({ success: true, total, page: Number(page), stats, members: paginated });
+    res.json({ success: true, total, page: Number(page), stats, genderSummary, members: paginated });
   } catch (err) {
     next(err);
   }

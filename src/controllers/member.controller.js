@@ -55,10 +55,16 @@ export const getMembers = async (req, res, next) => {
           $addFields: {
             feeStatus: {
               $cond: {
-                if: { $gt: [{ $size: "$latestFee" }, 0] },
-                then: { $arrayElemAt: ["$latestFee.status", 0] },
-                else: "never_paid",
-              },
+                if: { $eq: ["$feesAfterDiscount", 0] },
+                then: "free",
+                else: {
+                  $cond: {
+                    if: { $gt: [{ $size: "$latestFee" }, 0] },
+                    then: { $arrayElemAt: ["$latestFee.status", 0] },
+                    else: "never_paid",
+                  }
+                }
+              }
             },
             lastPaid: { $arrayElemAt: ["$latestFee.paidDate", 0] },
             feeExpiry: { $arrayElemAt: ["$latestFee.dueDate", 0] },
