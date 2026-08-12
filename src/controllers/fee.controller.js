@@ -69,7 +69,6 @@ export const getFeesOverview = async (req, res, next) => {
               }
             }
           },
-          },
         },
       },
       { $project: { feeArr: 0 } },
